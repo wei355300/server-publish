@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<configuration scan="false">
+	<appender name="default"
+		class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<encoder>
+			<pattern>[%level] %d{HH:mm:ss.SSS} [%thread] - %msg%n
+			</pattern>
+		</encoder>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>/data/server-publish/logs/%d{yyyy-MM-dd}/default.log
+			</fileNamePattern>
+		</rollingPolicy>
+	</appender>
+	<root level="INFO">
+		<appender-ref ref="default" />
+	</root>
+</configuration>  

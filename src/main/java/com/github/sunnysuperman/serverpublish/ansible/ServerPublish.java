@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.github.sunnysuperman.commons.bean.Bean;
 import com.github.sunnysuperman.commons.utils.FormatUtil;
 import com.github.sunnysuperman.commons.utils.JSONUtil;
 import com.github.sunnysuperman.commons.utils.StringUtil;
@@ -128,7 +129,7 @@ public class ServerPublish {
 		args.put("project_home", projectHome);
 		args.put("project_name", projectName);
 		args.put("profile", profile);
-		List<PublishServerSubTask> tasks = U.jsonString2list(FormatUtil.parseString(args.remove("tasks")),
+		List<PublishServerSubTask> tasks = Bean.fromJson(FormatUtil.parseString(args.remove("tasks")),
 				PublishServerSubTask.class);
 		args = Collections.unmodifiableMap(args);
 		L.info("args: " + args);
@@ -178,7 +179,7 @@ public class ServerPublish {
 	private int publishGroupServers(AnsibleTaskConfig cfg) throws Exception {
 		Map<String, Object> args = cfg.getArgs();
 		String groupName = args.get("host").toString();
-		List<BackendServer> updateServers = U.jsonString2list(args.get(groupName + "_servers").toString(),
+		List<BackendServer> updateServers = Bean.fromJson(args.get(groupName + "_servers").toString(),
 				BackendServer.class);
 		int ret;
 		for (BackendServer server : updateServers) {
@@ -206,7 +207,7 @@ public class ServerPublish {
 			loadBalanceService = LoadBalanceServiceFactory.getInstance(loadBalancerType, lbConfig);
 		}
 
-		List<BackendServer> updateServers = U.jsonString2list(args.get(groupName + "_servers").toString(),
+		List<BackendServer> updateServers = Bean.fromJson(args.get(groupName + "_servers").toString(),
 				BackendServer.class);
 		int ret;
 		if (loadBalanceService == null) {
@@ -232,7 +233,14 @@ public class ServerPublish {
 			for (BackendServer server : safeUpdateServers) {
 				// remove backend server
 				for (String loadbalancer : loadbalancers) {
-					loadBalanceService.removeBackendServer(loadbalancer, server.getId());
+					while (true) {
+						try {
+							loadBalanceService.removeBackendServer(loadbalancer, server.getId());
+							break;
+						} catch (Exception e) {
+							L.error(e);
+						}
+					}
 				}
 
 				// publish
@@ -250,7 +258,7 @@ public class ServerPublish {
 							while (!loadBalanceService.getHealthyBackendServers(loadbalancer).contains(server.getId())) {
 								L.info("Wait for server {" + server.toString() + "} restarts in loadbalancer "
 										+ loadbalancer);
-								U.sleep(5000);
+								U.sleep(1000);
 							}
 							break;
 						} catch (Exception e) {

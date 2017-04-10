@@ -2,6 +2,7 @@ package com.github.sunnysuperman.serverpublish.ansible;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -9,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.alibaba.fastjson.JSON;
 import com.github.sunnysuperman.commons.bean.Bean;
 import com.github.sunnysuperman.commons.utils.FormatUtil;
 import com.github.sunnysuperman.commons.utils.JSONUtil;
@@ -111,17 +113,19 @@ public class ServerPublish {
 		}
 
 		File configDir = new File(projectHome + "/config");
-		String[] configNames = new String[] { projectName, projectName + "-" + profile,
-				StringUtil.isEmpty(version) ? null : projectName + "-" + profile + "-" + version };
+		List<String> configNames = new ArrayList<>(3);
+		configNames.add(projectName);
+		configNames.add(projectName + "-" + profile);
+		if (StringUtil.isNotEmpty(version)) {
+			configNames.add(projectName + "-" + profile + "-" + version);
+		}
 		Map<String, Object> args = new HashMap<String, Object>();
 		for (String configName : configNames) {
-			if (configName == null) {
-				continue;
-			}
 			File configFile = new File(configDir, configName + ".properties");
-			if (configFile.exists()) {
-				args.putAll(U.readPropertiesAsMap(new FileInputStream(configFile)));
+			if (!configFile.exists()) {
+				throw new RuntimeException("config file " + configFile.getName() + " does not exists");
 			}
+			args.putAll(U.readPropertiesAsMap(new FileInputStream(configFile)));
 		}
 		if (args.isEmpty()) {
 			throw new RuntimeException("bad config");
@@ -132,7 +136,7 @@ public class ServerPublish {
 		List<PublishServerSubTask> tasks = Bean.fromJson(FormatUtil.parseString(args.remove("tasks")),
 				PublishServerSubTask.class);
 		args = Collections.unmodifiableMap(args);
-		L.info("args: " + args);
+		L.info("args: " + JSON.toJSONString(args, true));
 
 		for (PublishServerSubTask task : tasks) {
 			if (task.isDisabled()) {
